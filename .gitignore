@@ -242,4 +242,7 @@ tags
 *.db
 *.db-journal
 
+### Project dumps ###
+dumpzip/
+
 # End of https://www.toptal.com/developers/gitignore/api/python,jupyternotebooks,visualstudiocode,vim,data

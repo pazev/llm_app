@@ -14,10 +14,10 @@ conda activate pyenvs
 cp .env.example .env
 
 # 3. apply DB migrations (only needed first time, or after schema changes)
-alembic upgrade head
+python manage.py init
 
 # 4. run the app
-streamlit run streamlit.py
+python manage.py run
 ```
 
 ### Initialization flow
@@ -140,15 +140,15 @@ ChatController  (validates input with Pydantic, owns DB session lifecycle)
 
 ## Setup
 
-1. Create and activate a virtual environment:
+1. Create and activate a conda environment:
    ```bash
-   python -m venv .venv
-   source .venv/bin/activate   # Windows: .venv\Scripts\activate
+   conda create -n pyenvs python=3.11
+   conda activate pyenvs
    ```
 
 2. Install dependencies:
    ```bash
-   pip install -r requirements.txt
+   conda install -c conda-forge --file requirements.txt
    ```
 
 3. Copy `.env.example` to `.env` and fill in your values:
@@ -156,15 +156,26 @@ ChatController  (validates input with Pydantic, owns DB session lifecycle)
    cp .env.example .env
    ```
 
-4. Run database migrations:
+4. Run first-time initialisation (applies DB migrations):
    ```bash
-   alembic upgrade head
+   python manage.py init
    ```
 
 5. Start the app:
    ```bash
-   streamlit run streamlit.py
+   python manage.py run
    ```
+
+## Project management (manage.py)
+
+| Command | Description |
+|---|---|
+| `python manage.py run` | Start the Streamlit app |
+| `python manage.py init` | Run first-time initialisation (applies Alembic migrations) |
+| `python manage.py dumpzip` | Create a timestamped zip of the project in `./dumpzip/` |
+| `python manage.py tree` | Print the project file tree |
+| `python manage.py clear` | Remove cache and garbage files (`__pycache__`, `.pyc`, etc.) |
+| `python manage.py trim_trailing_spaces` | Strip trailing whitespace from all text files |
 
 ## Adding a new page
 
