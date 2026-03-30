@@ -12,6 +12,9 @@ streamlit.py          ← entry point, navigation, controller wiring
 pages/                ← one .py per page; auto-discovered and sorted by PRIORITY
 controllers/          ← orchestration layer; owns session lifecycle and DTO validation
 services/             ← LLM abstraction (ChatService ABC); stub and OpenAI implementations
+tools/                ← LangChain tools exposed to the LLM via bind_tools()
+  __init__.py         ← ALL_TOOLS list; import and register every tool here
+  _template.py        ← copy this to create a new tool
 repositories/         ← all SQL access; each repo takes a SQLAlchemy Session
 schemas/              ← Pydantic DTOs: *Create / *Submit for input, *Response for output
 db/
@@ -22,6 +25,11 @@ migrations/           ← Alembic; env.py reads DATABASE_URL from environment
 ```
 
 ### Key design rules
+
+- **Tools are a service dependency**: `tools/__init__.py` exports `ALL_TOOLS`. The service layer (e.g. `OpenAILangChainService`) binds them via `llm.bind_tools(ALL_TOOLS)`. Tools must never import from `services/` or `controllers/` (no upward imports).
+- **One tool per file**: each file in `tools/` defines exactly one `@tool` function and its Pydantic input schema. Register it in `tools/__init__.py`.
+- **Docstring is the contract**: the `@tool` function's docstring becomes the description sent to the LLM — keep it precise and unambiguous.
+
 
 - **Layers never bypass each other**: pages talk only to the controller; the controller talks to services and repositories; repositories talk only to the DB.
 - **Session-per-operation**: `get_db()` is called inside each controller method. Sessions are never stored in Streamlit session_state or passed between layers.
