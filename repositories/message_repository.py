@@ -28,3 +28,10 @@ class MessageRepository:
             .order_by(Message.datetime.asc())
             .all()
         )
+
+    def count_by_conversation(self, conversation_id: int) -> int:
+        return (
+            self._session.query(Message)
+            .filter(Message.conversation_id == conversation_id)
+            .count()
+        )

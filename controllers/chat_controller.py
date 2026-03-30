@@ -3,7 +3,7 @@ from repositories.conversation_repository import ConversationRepository
 from repositories.message_repository import MessageRepository
 from repositories.feedback_repository import FeedbackRepository
 from schemas import (
-    ConversationCreate, ConversationResponse,
+    ConversationCreate, ConversationResponse, ConversationSummary,
     MessageCreate, MessageResponse, SenderEnum,
     FeedbackSubmit, FeedbackResponse,
 )
@@ -45,6 +45,34 @@ class ChatController:
             llm_response = MessageResponse.model_validate(llm_msg)
 
         return user_response, llm_response
+
+    def list_conversations(self) -> list[ConversationSummary]:
+        with get_db() as db:
+            conversations = ConversationRepository(db).list_all()
+            msg_repo = MessageRepository(db)
+            fb_repo = FeedbackRepository(db)
+            return [
+                ConversationSummary(
+                    conversation_id=conv.conversation_id,
+                    datetime_start=conv.datetime_start,
+                    title=conv.title,
+                    message_count=msg_repo.count_by_conversation(conv.conversation_id),
+                    feedback_count=fb_repo.count_by_conversation(conv.conversation_id),
+                )
+                for conv in conversations
+            ]
+
+    def get_conversation_messages(self, conversation_id: int) -> list[MessageResponse]:
+        with get_db() as db:
+            messages = MessageRepository(db).list_by_conversation(conversation_id)
+            return [MessageResponse.model_validate(m) for m in messages]
+
+    def get_conversation_feedbacks(self, conversation_id: int) -> dict[int, FeedbackResponse]:
+        with get_db() as db:
+            messages = MessageRepository(db).list_by_conversation(conversation_id)
+            message_ids = [m.message_id for m in messages]
+            feedbacks = FeedbackRepository(db).list_by_message_ids(message_ids)
+            return {fb.message_id: FeedbackResponse.model_validate(fb) for fb in feedbacks}
 
     def submit_feedback(
         self,

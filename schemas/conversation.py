@@ -13,3 +13,11 @@ class ConversationResponse(BaseModel):
     conversation_id: int
     datetime_start: datetime
     title: Optional[str] = None
+
+
+class ConversationSummary(BaseModel):
+    conversation_id: int
+    datetime_start: datetime
+    title: Optional[str] = None
+    message_count: int
+    feedback_count: int

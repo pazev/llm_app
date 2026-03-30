@@ -1,5 +1,6 @@
 from datetime import datetime
 from sqlalchemy.orm import Session
+from db.models.message import Message
 from db.models.message_feedback import MessageFeedback
 
 
@@ -35,4 +36,21 @@ class FeedbackRepository:
             self._session.query(MessageFeedback)
             .filter(MessageFeedback.message_id == message_id)
             .first()
+        )
+
+    def list_by_message_ids(self, message_ids: list[int]) -> list[MessageFeedback]:
+        if not message_ids:
+            return []
+        return (
+            self._session.query(MessageFeedback)
+            .filter(MessageFeedback.message_id.in_(message_ids))
+            .all()
+        )
+
+    def count_by_conversation(self, conversation_id: int) -> int:
+        return (
+            self._session.query(MessageFeedback)
+            .join(Message, MessageFeedback.message_id == Message.message_id)
+            .filter(Message.conversation_id == conversation_id)
+            .count()
         )

@@ -26,6 +26,20 @@ def _build_controller() -> ChatController:
     return ChatController(chat_service=get_llm_service())
 
 
+st.set_page_config(layout="wide")
+st.markdown(
+    """
+    <style>
+    .block-container {
+        max-width: 80% !important;
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 if "controller" not in st.session_state:
     st.session_state["controller"] = _build_controller()
 
