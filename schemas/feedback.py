@@ -1,18 +1,19 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class FeedbackSubmit(BaseModel):
     message_id: int
-    positive_feedback: Optional[bool] = None
-    comment: Optional[str] = None
+    positive_feedback: bool
+    comment: str
 
-    @model_validator(mode="after")
-    def at_least_one_field(self):
-        if self.positive_feedback is None and self.comment is None:
-            raise ValueError("at least one of positive_feedback or comment must be provided")
-        return self
+    @field_validator("comment")
+    @classmethod
+    def comment_not_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("comment must not be empty")
+        return v.strip()
 
 
 class FeedbackResponse(BaseModel):

@@ -49,8 +49,8 @@ class ChatController:
     def submit_feedback(
         self,
         message_id: int,
-        positive_feedback: bool = None,
-        comment: str = None,
+        positive_feedback: bool,
+        comment: str,
     ) -> FeedbackResponse:
         dto = FeedbackSubmit(message_id=message_id, positive_feedback=positive_feedback, comment=comment)
         with get_db() as db:

@@ -14,37 +14,40 @@ def _render_feedback_row(message_id: int):
     controller = _get_controller()
     feedback = st.session_state.get(f"feedback_{message_id}", {})
 
-    col_up, col_down, col_comment, _ = st.columns([1, 1, 1, 8])
+    if feedback.get("submitted"):
+        sentiment = "👍" if feedback["positive"] else "👎"
+        st.caption(f"Your feedback: {sentiment} — {feedback['comment']}")
+        return
 
+    st.info("Feedback requires a rating and a comment.", icon="ℹ️")
+
+    pending = st.session_state.get(f"pending_sentiment_{message_id}")
+
+    col_up, col_down, _ = st.columns([1, 1, 9])
     with col_up:
-        label = "👍" if feedback.get("positive") is True else "👍"
-        if st.button(label, key=f"up_{message_id}", help="Helpful"):
-            controller.submit_feedback(message_id, positive_feedback=True)
-            st.session_state[f"feedback_{message_id}"] = {**feedback, "positive": True}
+        if st.button("👍", key=f"up_{message_id}", type="primary" if pending is True else "secondary"):
+            st.session_state[f"pending_sentiment_{message_id}"] = True
             st.rerun()
-
     with col_down:
-        if st.button("👎", key=f"down_{message_id}", help="Not helpful"):
-            controller.submit_feedback(message_id, positive_feedback=False)
-            st.session_state[f"feedback_{message_id}"] = {**feedback, "positive": False}
+        if st.button("👎", key=f"down_{message_id}", type="primary" if pending is False else "secondary"):
+            st.session_state[f"pending_sentiment_{message_id}"] = False
             st.rerun()
 
-    with col_comment:
-        if st.button("💬", key=f"comment_btn_{message_id}", help="Add comment"):
-            current = st.session_state.get("active_comment_for")
-            st.session_state["active_comment_for"] = None if current == message_id else message_id
-            st.rerun()
-
-    if st.session_state.get("active_comment_for") == message_id:
-        with st.form(key=f"comment_form_{message_id}", clear_on_submit=True):
-            existing = feedback.get("comment", "")
-            text = st.text_area("Your comment", value=existing, key=f"comment_text_{message_id}")
-            submitted = st.form_submit_button("Save comment")
-            if submitted and text.strip():
-                controller.submit_feedback(message_id, comment=text.strip())
-                st.session_state[f"feedback_{message_id}"] = {**feedback, "comment": text.strip()}
-                st.session_state["active_comment_for"] = None
-                st.rerun()
+    if pending is not None:
+        with st.form(key=f"feedback_form_{message_id}", clear_on_submit=False):
+            text = st.text_area("Add a comment to complete your feedback")
+            if st.form_submit_button("Submit feedback"):
+                if not text.strip():
+                    st.warning("A comment is required.")
+                else:
+                    controller.submit_feedback(message_id, positive_feedback=pending, comment=text.strip())
+                    st.session_state[f"feedback_{message_id}"] = {
+                        "submitted": True,
+                        "positive": pending,
+                        "comment": text.strip(),
+                    }
+                    del st.session_state[f"pending_sentiment_{message_id}"]
+                    st.rerun()
 
 
 def build_page():
