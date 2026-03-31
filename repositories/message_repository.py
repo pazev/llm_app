@@ -7,11 +7,12 @@ class MessageRepository:
     def __init__(self, session: Session):
         self._session = session
 
-    def create(self, conversation_id: int, sender: str, content: str) -> Message:
+    def create(self, conversation_id: int, sender: str, content: str, message_context: list | None = None) -> Message:
         message = Message(
             conversation_id=conversation_id,
             sender=sender,
             content=content,
+            message_context=message_context,
             datetime=datetime.utcnow(),
         )
         self._session.add(message)

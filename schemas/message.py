@@ -1,5 +1,6 @@
 from datetime import datetime
 from enum import Enum
+from typing import Any
 from pydantic import BaseModel, ConfigDict, field_validator
 
 
@@ -12,6 +13,7 @@ class MessageCreate(BaseModel):
     conversation_id: int
     sender: SenderEnum
     content: str
+    message_context: list[dict[str, Any]] | None = None
 
     @field_validator("content")
     @classmethod
@@ -28,4 +30,5 @@ class MessageResponse(BaseModel):
     conversation_id: int
     sender: str
     content: str
+    message_context: list[dict[str, Any]] | None = None
     datetime: datetime

@@ -50,6 +50,32 @@ def _render_feedback_row(message_id: int):
                     st.rerun()
 
 
+def _render_context_debug(context: list[dict], message_id: int):
+    if not context:
+        return
+    with st.expander(f"🔍 Context ({len(context)} message{'s' if len(context) != 1 else ''})"):
+        for i, msg in enumerate(context):
+            label = f"{i + 1}. {msg.get('type', 'Message')}"
+            if msg.get("tool_calls"):
+                tools = ", ".join(tc["name"] for tc in msg["tool_calls"])
+                label += f" → {tools}"
+            with st.expander(label, expanded=False):
+                st.markdown(f"**Type:** `{msg.get('type')}`")
+                st.markdown(f"**Token usage:** `{msg.get('token_usage', 0)}`")
+                if msg.get("content"):
+                    st.markdown("**Content:**")
+                    st.code(msg["content"], language=None)
+                if msg.get("tool_calls"):
+                    st.markdown("**Tool calls:**")
+                    st.json(msg["tool_calls"])
+                if msg.get("additional_kwargs"):
+                    st.markdown("**Additional kwargs:**")
+                    st.json(msg["additional_kwargs"])
+                if msg.get("response_metadata"):
+                    st.markdown("**Response metadata:**")
+                    st.json(msg["response_metadata"])
+
+
 def build_page():
     st.title("Business Chat Assistant")
 
@@ -78,6 +104,7 @@ def build_page():
             st.markdown(content)
 
         if role == "assistant" and message_id:
+            _render_context_debug(entry.get("message_context") or [], message_id)
             _render_feedback_row(message_id)
 
     user_input = st.chat_input("Ask a business question...")
@@ -103,5 +130,6 @@ def build_page():
             "role": "assistant",
             "content": llm_msg.content,
             "message_id": llm_msg.message_id,
+            "message_context": llm_msg.message_context,
         })
         st.rerun()

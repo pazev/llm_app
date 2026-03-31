@@ -25,9 +25,14 @@ class ChatController:
     ) -> tuple[MessageResponse, MessageResponse]:
         user_dto = MessageCreate(conversation_id=conversation_id, sender=SenderEnum.user, content=user_content)
 
-        llm_text = self._chat_service.get_response(user_dto.content, conversation_history)
+        llm_text, context = self._chat_service.get_response(user_dto.content, conversation_history)
 
-        llm_dto = MessageCreate(conversation_id=conversation_id, sender=SenderEnum.llm, content=llm_text)
+        llm_dto = MessageCreate(
+            conversation_id=conversation_id,
+            sender=SenderEnum.llm,
+            content=llm_text,
+            message_context=context or None,
+        )
 
         with get_db() as db:
             msg_repo = MessageRepository(db)
@@ -41,6 +46,7 @@ class ChatController:
                 conversation_id=llm_dto.conversation_id,
                 sender=llm_dto.sender.value,
                 content=llm_dto.content,
+                message_context=llm_dto.message_context,
             )
             llm_response = MessageResponse.model_validate(llm_msg)
 
