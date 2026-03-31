@@ -1,5 +1,5 @@
 import os
-from typing import Any
+from typing import Any, Callable
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, ToolMessage, BaseMessage
 from langchain_core.tools import BaseTool
@@ -13,11 +13,12 @@ DEFAULT_SYSTEM_PROMPT = (
 
 
 class OpenAILangChainService(ChatService):
-    def __init__(self, system_prompt: str = DEFAULT_SYSTEM_PROMPT):
-        self._system_prompt = system_prompt
+    def __init__(self, system_prompt_maker: Callable[[], str] = lambda: DEFAULT_SYSTEM_PROMPT, **kwargs):
+        self._system_prompt_maker = system_prompt_maker
         llm = ChatOpenAI(
             model="gpt-4o",
             api_key=os.environ["OPENAI_API_KEY"],
+            **kwargs,
         )
         self._llm = llm.bind_tools(ALL_TOOLS) if ALL_TOOLS else llm
         self._tools_by_name: dict[str, BaseTool] = {t.name: t for t in ALL_TOOLS}
@@ -41,7 +42,7 @@ class OpenAILangChainService(ChatService):
         }
 
     def get_response(self, user_message: str, conversation_history: list[dict]) -> tuple[str, list[dict[str, Any]]]:
-        messages = [SystemMessage(content=self._system_prompt)]
+        messages = [SystemMessage(content=self._system_prompt_maker())]
         for entry in conversation_history:
             if entry["role"] == "user":
                 messages.append(HumanMessage(content=entry["content"]))
