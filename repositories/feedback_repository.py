@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from db.models.message import Message
@@ -25,7 +25,7 @@ class FeedbackRepository:
                 message_id=message_id,
                 positive_feedback=positive_feedback,
                 comment=comment,
-                datetime=datetime.utcnow(),
+                datetime=datetime.now(timezone.utc),
             )
             self._session.add(feedback)
         else:
@@ -33,7 +33,7 @@ class FeedbackRepository:
                 feedback.positive_feedback = positive_feedback
             if comment is not None:
                 feedback.comment = comment
-            feedback.datetime = datetime.utcnow()
+            feedback.datetime = datetime.now(timezone.utc)
         self._session.flush()
         return feedback
 
