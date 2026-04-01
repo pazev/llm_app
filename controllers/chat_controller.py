@@ -29,6 +29,17 @@ class ChatController:
     def set_model(self, model: str) -> None:
         self._chat_service.set_model(model)
 
+    def resume_conversation(
+        self, conversation_id: int
+    ) -> Tuple[ConversationResponse, List[MessageResponse]]:
+        messages = self.get_conversation_messages(
+            conversation_id
+        )
+        new_conv = self.start_conversation(
+            title=f"Resumed from #{conversation_id}"
+        )
+        return new_conv, messages
+
     def start_conversation(
         self, title: Optional[str] = None
     ) -> ConversationResponse:

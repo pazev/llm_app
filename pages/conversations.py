@@ -133,19 +133,63 @@ def build_page():
                     f"Messages: {conv.message_count}"
                     f" · Feedbacks: {conv.feedback_count}"
                 )
-                if st.button(
-                    "View",
-                    key=f"view_conv_{conv.conversation_id}",
-                    type=(
-                        "primary"
-                        if selected_id == conv.conversation_id
-                        else "secondary"
-                    ),
-                ):
-                    st.session_state[
-                        "conversations_selected_id"
-                    ] = conv.conversation_id
-                    st.rerun()
+                btn_col, resume_col = st.columns(2)
+                with btn_col:
+                    if st.button(
+                        "View",
+                        key=(
+                            f"view_conv_"
+                            f"{conv.conversation_id}"
+                        ),
+                        type=(
+                            "primary"
+                            if selected_id
+                            == conv.conversation_id
+                            else "secondary"
+                        ),
+                    ):
+                        st.session_state[
+                            "conversations_selected_id"
+                        ] = conv.conversation_id
+                        st.rerun()
+                with resume_col:
+                    if st.button(
+                        "Resume",
+                        key=(
+                            f"resume_conv_"
+                            f"{conv.conversation_id}"
+                        ),
+                    ):
+                        new_conv, old_messages = (
+                            controller.resume_conversation(
+                                conv.conversation_id
+                            )
+                        )
+                        st.session_state[
+                            "conversation_id"
+                        ] = new_conv.conversation_id
+                        st.session_state["messages"] = [
+                            {
+                                "role": (
+                                    "user"
+                                    if m.sender == "user"
+                                    else "assistant"
+                                ),
+                                "content": m.content,
+                                "message_id": m.message_id,
+                                **(
+                                    {
+                                        "message_context": (
+                                            m.message_context
+                                        )
+                                    }
+                                    if m.sender == "llm"
+                                    else {}
+                                ),
+                            }
+                            for m in old_messages
+                        ]
+                        st.switch_page("pages/chat.py")
 
     with col_right:
         if selected_id is None:
