@@ -32,13 +32,30 @@ class ChatController:
     def resume_conversation(
         self, conversation_id: int
     ) -> Tuple[ConversationResponse, List[MessageResponse]]:
-        messages = self.get_conversation_messages(
-            conversation_id
-        )
-        new_conv = self.start_conversation(
-            title=f"Resumed from #{conversation_id}"
-        )
-        return new_conv, messages
+        with get_db() as db:
+            new_conv = ConversationRepository(db).create(
+                title=f"Resumed from #{conversation_id}"
+            )
+            old_messages = MessageRepository(
+                db
+            ).list_by_conversation(conversation_id)
+            msg_repo = MessageRepository(db)
+            new_messages = [
+                msg_repo.create(
+                    conversation_id=new_conv.conversation_id,
+                    sender=m.sender,
+                    content=m.content,
+                    message_context=m.message_context,
+                )
+                for m in old_messages
+            ]
+            return (
+                ConversationResponse.model_validate(new_conv),
+                [
+                    MessageResponse.model_validate(m)
+                    for m in new_messages
+                ],
+            )
 
     def start_conversation(
         self, title: Optional[str] = None
