@@ -28,18 +28,31 @@ class OpenAILangChainService(ChatService):
         **kwargs,
     ):
         self._system_prompt_maker = system_prompt_maker
-        llm = ChatOpenAI(
-            model=os.environ.get("DEFAULT_MODEL", "gpt-4o"),
-            api_key=os.environ["OPENAI_API_KEY"],
-            base_url=os.environ.get("OPENAI_BASE_URL") or None,
-            **kwargs,
-        )
-        self._llm = (
-            llm.bind_tools(ALL_TOOLS) if ALL_TOOLS else llm
+        self._kwargs = kwargs
+        self._model = os.environ.get(
+            "DEFAULT_MODEL", "gpt-4o"
         )
         self._tools_by_name: Dict[str, BaseTool] = {
             t.name: t for t in ALL_TOOLS
         }
+        self._build_llm()
+
+    def _build_llm(self) -> None:
+        llm = ChatOpenAI(
+            model=self._model,
+            api_key=os.environ["OPENAI_API_KEY"],
+            base_url=(
+                os.environ.get("OPENAI_BASE_URL") or None
+            ),
+            **self._kwargs,
+        )
+        self._llm = (
+            llm.bind_tools(ALL_TOOLS) if ALL_TOOLS else llm
+        )
+
+    def set_model(self, model: str) -> None:
+        self._model = model
+        self._build_llm()
 
     def _message_to_dict(
         self, message: BaseMessage

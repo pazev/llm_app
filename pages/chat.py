@@ -123,7 +123,27 @@ def _render_context_debug(
                     st.json(msg["response_metadata"])
 
 
+def _render_sidebar():
+    controller = _get_controller()
+    with st.sidebar:
+        st.subheader("Model")
+        models = controller.list_available_models()
+        current = st.session_state.get(
+            "selected_model", models[0]
+        )
+        selected = st.selectbox(
+            "Model",
+            models,
+            index=models.index(current),
+            label_visibility="collapsed",
+        )
+        if selected != current:
+            st.session_state["selected_model"] = selected
+            controller.set_model(selected)
+
+
 def build_page():
+    _render_sidebar()
     st.title("Business Chat Assistant")
 
     if "conversation_id" not in st.session_state:

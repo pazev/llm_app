@@ -16,11 +16,18 @@ from schemas import (
     FeedbackResponse,
 )
 from services.chat_service import ChatService
+from services.models import list_available_models
 
 
 class ChatController:
     def __init__(self, chat_service: ChatService):
         self._chat_service = chat_service
+
+    def list_available_models(self) -> List[str]:
+        return list_available_models()
+
+    def set_model(self, model: str) -> None:
+        self._chat_service.set_model(model)
 
     def start_conversation(
         self, title: Optional[str] = None

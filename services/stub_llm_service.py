@@ -8,6 +8,9 @@ class StubLLMService(ChatService):
             lambda: ""
         )
 
+    def set_model(self, model: str) -> None:
+        pass
+
     def set_system_prompt_maker(
         self, maker: Callable[[], str]
     ) -> None:

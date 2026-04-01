@@ -4,6 +4,10 @@ from typing import Any, Callable, Dict, List, Tuple
 
 class ChatService(ABC):
     @abstractmethod
+    def set_model(self, model: str) -> None:
+        """Switch the model used for LLM calls."""
+
+    @abstractmethod
     def set_system_prompt_maker(
         self, maker: Callable[[], str]
     ) -> None:
