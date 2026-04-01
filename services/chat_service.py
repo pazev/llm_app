@@ -1,8 +1,16 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Callable
 
 
 class ChatService(ABC):
+    @abstractmethod
+    def set_system_prompt_maker(self, maker: Callable[[], str]) -> None:
+        """Set the callable used to produce the system prompt at request time."""
+
+    @abstractmethod
+    def get_system_prompt_maker(self) -> Callable[[], str]:
+        """Return the current system prompt maker callable."""
+
     @abstractmethod
     def get_response(self, user_message: str, conversation_history: list[dict]) -> tuple[str, list[dict[str, Any]]]:
         """Return the LLM response and the full message context for the interaction.

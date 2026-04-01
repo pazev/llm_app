@@ -16,8 +16,9 @@ class OpenAILangChainService(ChatService):
     def __init__(self, system_prompt_maker: Callable[[], str] = lambda: DEFAULT_SYSTEM_PROMPT, **kwargs):
         self._system_prompt_maker = system_prompt_maker
         llm = ChatOpenAI(
-            model="gpt-4o",
+            model=os.environ.get("DEFAULT_MODEL", "gpt-4o"),
             api_key=os.environ["OPENAI_API_KEY"],
+            base_url=os.environ.get("OPENAI_BASE_URL") or None,
             **kwargs,
         )
         self._llm = llm.bind_tools(ALL_TOOLS) if ALL_TOOLS else llm
@@ -40,6 +41,12 @@ class OpenAILangChainService(ChatService):
             "token_usage": token_usage,
             "tool_calls": tool_calls,
         }
+
+    def set_system_prompt_maker(self, maker: Callable[[], str]) -> None:
+        self._system_prompt_maker = maker
+
+    def get_system_prompt_maker(self) -> Callable[[], str]:
+        return self._system_prompt_maker
 
     def get_response(self, user_message: str, conversation_history: list[dict]) -> tuple[str, list[dict[str, Any]]]:
         messages = [SystemMessage(content=self._system_prompt_maker())]
