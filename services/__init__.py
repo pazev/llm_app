@@ -17,4 +17,7 @@ def get_llm_service(
         service = StubLLMService()
     if system_prompt_maker is not None:
         service.set_system_prompt_maker(system_prompt_maker)
-    return service
+        return service
+    raise ValueError(
+        "system_prompt_maker is required."
+    )

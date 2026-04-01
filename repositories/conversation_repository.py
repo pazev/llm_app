@@ -9,10 +9,16 @@ class ConversationRepository:
         self._session = session
 
     def create(
-        self, title: Optional[str] = None
+        self,
+        title: Optional[str] = None,
+        resumed_from_conversation_id: Optional[int] = None,
     ) -> Conversation:
         conversation = Conversation(
-            datetime_start=datetime.utcnow(), title=title
+            datetime_start=datetime.utcnow(),
+            title=title,
+            resumed_from_conversation_id=(
+                resumed_from_conversation_id
+            ),
         )
         self._session.add(conversation)
         self._session.flush()

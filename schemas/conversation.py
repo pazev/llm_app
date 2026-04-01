@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict
 
 class ConversationCreate(BaseModel):
     title: Optional[str] = None
+    resumed_from_conversation_id: Optional[int] = None
 
 
 class ConversationResponse(BaseModel):
@@ -13,6 +14,7 @@ class ConversationResponse(BaseModel):
     conversation_id: int
     datetime_start: datetime
     title: Optional[str] = None
+    resumed_from_conversation_id: Optional[int] = None
 
 
 class ConversationSummary(BaseModel):
@@ -21,3 +23,4 @@ class ConversationSummary(BaseModel):
     title: Optional[str] = None
     message_count: int
     feedback_count: int
+    resumed_from_conversation_id: Optional[int] = None

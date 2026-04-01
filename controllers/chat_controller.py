@@ -34,7 +34,8 @@ class ChatController:
     ) -> Tuple[ConversationResponse, List[MessageResponse]]:
         with get_db() as db:
             new_conv = ConversationRepository(db).create(
-                title=f"Resumed from #{conversation_id}"
+                title=f"Resumed from #{conversation_id}",
+                resumed_from_conversation_id=conversation_id,
             )
             old_messages = MessageRepository(
                 db
@@ -49,6 +50,24 @@ class ChatController:
                 )
                 for m in old_messages
             ]
+            old_ids = [m.message_id for m in old_messages]
+            feedbacks = FeedbackRepository(
+                db
+            ).list_by_message_ids(old_ids)
+            fb_by_old_id = {
+                fb.message_id: fb for fb in feedbacks
+            }
+            id_map = {
+                old.message_id: new.message_id
+                for old, new in zip(old_messages, new_messages)
+            }
+            fb_repo = FeedbackRepository(db)
+            for old_id, fb in fb_by_old_id.items():
+                fb_repo.upsert(
+                    message_id=id_map[old_id],
+                    positive_feedback=fb.positive_feedback,
+                    comment=fb.comment,
+                )
             return (
                 ConversationResponse.model_validate(new_conv),
                 [

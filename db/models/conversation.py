@@ -1,5 +1,11 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, DateTime, String
+from sqlalchemy import (
+    Column,
+    Integer,
+    DateTime,
+    String,
+    ForeignKey,
+)
 from sqlalchemy.orm import relationship
 from db.base import Base
 
@@ -14,6 +20,11 @@ class Conversation(Base):
         DateTime, default=datetime.utcnow, nullable=False
     )
     title = Column(String(255), nullable=True)
+    resumed_from_conversation_id = Column(
+        Integer,
+        ForeignKey("conversations.conversation_id"),
+        nullable=True,
+    )
 
     messages = relationship(
         "Message",
