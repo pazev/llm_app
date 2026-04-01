@@ -1,6 +1,7 @@
 import importlib
 import pathlib
 from collections import defaultdict
+from typing import Dict, List
 
 import streamlit as st
 
@@ -10,13 +11,15 @@ from controllers.chat_controller import ChatController
 EXCLUDED_STEMS = {"__init__", "_template"}
 
 
-def _load_page_modules() -> list:
+def _load_page_modules() -> List:
     pages_dir = pathlib.Path(__file__).parent / "pages"
     modules = []
     for filepath in sorted(pages_dir.glob("*.py")):
         if filepath.stem in EXCLUDED_STEMS:
             continue
-        mod = importlib.import_module(f"pages.{filepath.stem}")
+        mod = importlib.import_module(
+            f"pages.{filepath.stem}"
+        )
         modules.append(mod)
     modules.sort(key=lambda m: getattr(m, "PRIORITY", 999))
     return modules
@@ -45,7 +48,7 @@ if "controller" not in st.session_state:
 
 modules = _load_page_modules()
 
-sections: dict[str, list] = defaultdict(list)
+sections: Dict[str, List] = defaultdict(list)
 for mod in modules:
     section = getattr(mod, "SECTION_NAME", "Main")
     page = st.Page(
