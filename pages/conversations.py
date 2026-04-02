@@ -1,5 +1,7 @@
 import streamlit as st
 
+from pages import load_page_urls
+
 PAGE_NAME = "Conversations"
 SECTION_NAME = "Main"
 URL_PATH = "conversations"
@@ -189,7 +191,7 @@ def build_page():
                             }
                             for m in old_messages
                         ]
-                        st.switch_page("pages/chat.py")
+                        st.switch_page(load_page_urls()["chat"])
 
     with col_right:
         if selected_id is None:
