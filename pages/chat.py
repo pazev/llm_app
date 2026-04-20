@@ -6,6 +6,7 @@ PAGE_NAME = "Chat"
 SECTION_NAME = "Main"
 URL_PATH = "chat"
 PRIORITY = 1
+REQUIRED_ROLES = {"user", "business_admin", "admin"}
 
 
 def _get_controller():

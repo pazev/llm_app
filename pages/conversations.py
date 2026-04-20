@@ -7,6 +7,7 @@ PAGE_NAME = "Conversations"
 SECTION_NAME = "Main"
 URL_PATH = "conversations"
 PRIORITY = 2
+REQUIRED_ROLES = {"user", "business_admin", "admin"}
 
 
 def _get_controller():
