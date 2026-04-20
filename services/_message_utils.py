@@ -31,6 +31,7 @@ def message_to_dict(
     ]
     return {
         "type": msg_type,
+        "status": getattr(message, "status", None),
         "content": (
             message.content
             if isinstance(message.content, str)

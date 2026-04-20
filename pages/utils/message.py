@@ -164,9 +164,16 @@ def render_context_debug(
             tok = msg.get("token_usage", 0)
             tok_in = msg.get("input_tokens", 0)
             tok_out = msg.get("output_tokens", 0)
+            status = msg.get("status")
+            status_icon = (
+                " ❌" if status == "error"
+                else " ✅" if status == "success"
+                else ""
+            )
             label = (
                 f"{i + 1}."
-                f" {msg.get('type', 'Message')}:"
+                f" {msg.get('type', 'Message')}"
+                f"{status_icon}:"
                 f" {tok} tokens"
                 f" (in {tok_in} / out {tok_out})"
             )

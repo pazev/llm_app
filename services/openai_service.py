@@ -1,4 +1,5 @@
 import os
+import traceback
 from typing import Any, Callable, Dict, List, Tuple
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import (
@@ -93,12 +94,35 @@ class OpenAILangChainService(ChatService):
                 return response.content, context
 
             for tool_call in response.tool_calls:
-                tool = self._tools_by_name[tool_call["name"]]
-                result = tool.invoke(tool_call["args"])
-                tool_msg = ToolMessage(
-                    content=str(result),
-                    tool_call_id=tool_call["id"],
-                )
+                tool = self._tools_by_name[
+                    tool_call["name"]
+                ]
+                try:
+                    result = tool.invoke(
+                        tool_call["args"]
+                    )
+                    tool_msg = ToolMessage(
+                        content=str(result),
+                        tool_call_id=tool_call["id"],
+                        status="success",
+                        additional_kwargs={
+                            "args": tool_call["args"],
+                        },
+                    )
+                except Exception:
+                    tb = traceback.format_exc()
+                    tool_msg = ToolMessage(
+                        content=(
+                            f"Tool '{tool_call['name']}'"
+                            f" failed with error:\n{tb}"
+                        ),
+                        tool_call_id=tool_call["id"],
+                        status="error",
+                        additional_kwargs={
+                            "args": tool_call["args"],
+                            "traceback": tb,
+                        },
+                    )
                 messages.append(tool_msg)
                 context.append(message_to_dict(tool_msg))
 
