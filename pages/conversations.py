@@ -140,7 +140,7 @@ def build_page():
                     message_context=getattr(
                         msg, "message_context", None
                     ),
-                    existing_feedback=feedbacks.get(
+                    existing_feedbacks=feedbacks.get(
                         msg.message_id
                     ),
                     datetime=msg.datetime,

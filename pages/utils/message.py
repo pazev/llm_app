@@ -14,14 +14,15 @@ import streamlit as st
 
 def render_feedback_row(
     message_id: int,
-    existing_feedback=None,
+    existing_feedbacks=None,
 ):
     """Render thumbs feedback UI for an LLM message.
 
-    ``existing_feedback`` is a MessageFeedbackResponse
-    (or None). When provided, the submitted state is
-    seeded from the DB so the row shows the stored
-    feedback on first render.
+    ``existing_feedbacks`` is a list of
+    FeedbackResponse objects (or None). When provided,
+    the list is seeded into session state on first
+    render so stored feedbacks appear immediately.
+    Multiple feedbacks per message are supported.
     """
     st.markdown(
         """
@@ -39,40 +40,38 @@ def render_feedback_row(
     )
 
     controller = st.session_state["controller"]
+    list_key = f"feedbacks_{message_id}"
+    pending_key = f"pending_sentiment_{message_id}"
 
     if (
-        f"feedback_{message_id}" not in st.session_state
-        and existing_feedback is not None
+        list_key not in st.session_state
+        and existing_feedbacks
     ):
-        st.session_state[
-            f"feedback_{message_id}"
-        ] = {
-            "submitted": True,
-            "positive": (
-                existing_feedback.positive_feedback
-            ),
-            "comment": existing_feedback.comment,
-        }
+        st.session_state[list_key] = [
+            {
+                "positive": fb.positive_feedback,
+                "comment": fb.comment,
+                "datetime": fb.datetime,
+            }
+            for fb in existing_feedbacks
+        ]
 
-    feedback = st.session_state.get(
-        f"feedback_{message_id}", {}
-    )
-
-    if feedback.get("submitted"):
+    for fb in st.session_state.get(list_key, []):
         sentiment = (
-            "👍" if feedback["positive"] else "👎"
+            "👍" if fb["positive"] else "👎"
+        )
+        dt = fb["datetime"]
+        dt_str = (
+            dt.strftime("%Y-%m-%d %H:%M:%S")
+            if dt else ""
         )
         st.caption(
-            f"Your feedback: {sentiment}"
-            f" — {feedback['comment']}"
+            f"{sentiment} {fb['comment']}"
+            f" — {dt_str}"
         )
-        return
 
-    pending = st.session_state.get(
-        f"pending_sentiment_{message_id}"
-    )
+    pending = st.session_state.get(pending_key)
 
-    key = f"pending_sentiment_{message_id}"
     col_up, col_down, _ = st.columns([1, 1, 9])
     with col_up:
         if st.button(
@@ -84,9 +83,9 @@ def render_feedback_row(
             ),
         ):
             if pending is True:
-                del st.session_state[key]
+                del st.session_state[pending_key]
             else:
-                st.session_state[key] = True
+                st.session_state[pending_key] = True
             st.rerun()
     with col_down:
         if st.button(
@@ -98,9 +97,9 @@ def render_feedback_row(
             ),
         ):
             if pending is False:
-                del st.session_state[key]
+                del st.session_state[pending_key]
             else:
-                st.session_state[key] = False
+                st.session_state[pending_key] = False
             st.rerun()
 
     if pending is not None:
@@ -123,19 +122,19 @@ def render_feedback_row(
                         "A comment is required."
                     )
                 else:
-                    controller.submit_feedback(
+                    result = controller.submit_feedback(
                         message_id,
                         positive_feedback=pending,
                         comment=text.strip(),
                     )
-                    st.session_state[
-                        f"feedback_{message_id}"
-                    ] = {
-                        "submitted": True,
+                    st.session_state.setdefault(
+                        list_key, []
+                    ).append({
                         "positive": pending,
                         "comment": text.strip(),
-                    }
-                    del st.session_state[key]
+                        "datetime": result.datetime,
+                    })
+                    del st.session_state[pending_key]
                     st.rerun()
 
 
@@ -203,7 +202,7 @@ def render_message(
     content: str,
     message_id: Optional[int] = None,
     message_context: Optional[List[Dict]] = None,
-    existing_feedback=None,
+    existing_feedbacks=None,
     datetime: Optional[datetime] = None,
 ):
     """Render a single chat message with optional
@@ -216,8 +215,8 @@ def render_message(
             and context debug.
         message_context: LangChain context messages
             for the debug expander (assistant only).
-        existing_feedback: MessageFeedbackResponse
-            from the DB, or None (assistant only).
+        existing_feedbacks: List of
+            FeedbackResponse from the DB, or None.
         datetime: When provided, shown as a caption
             inside the message bubble.
     """
@@ -232,5 +231,5 @@ def render_message(
                 message_context or [], message_id
             )
             render_feedback_row(
-                message_id, existing_feedback
+                message_id, existing_feedbacks
             )

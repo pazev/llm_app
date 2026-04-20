@@ -174,7 +174,7 @@ class ChatController:
 
     def get_conversation_feedbacks(
         self, conversation_id: int
-    ) -> Dict[int, FeedbackResponse]:
+    ) -> Dict[int, List[FeedbackResponse]]:
         with get_db() as db:
             messages = MessageRepository(
                 db
@@ -183,12 +183,11 @@ class ChatController:
             feedbacks = FeedbackRepository(
                 db
             ).list_by_message_ids(message_ids)
-            return {
-                fb.message_id: FeedbackResponse.model_validate(
-                    fb
-                )
-                for fb in feedbacks
-            }
+            result: Dict[int, List[FeedbackResponse]] = {}
+            for fb in feedbacks:
+                r = FeedbackResponse.model_validate(fb)
+                result.setdefault(fb.message_id, []).append(r)
+            return result
 
     def submit_feedback(
         self,
@@ -202,7 +201,7 @@ class ChatController:
             comment=comment,
         )
         with get_db() as db:
-            feedback = FeedbackRepository(db).upsert(
+            feedback = FeedbackRepository(db).create(
                 message_id=dto.message_id,
                 positive_feedback=dto.positive_feedback,
                 comment=dto.comment,

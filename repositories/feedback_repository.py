@@ -9,42 +9,21 @@ class FeedbackRepository:
     def __init__(self, session: Session):
         self._session = session
 
-    def upsert(
+    def create(
         self,
         message_id: int,
         positive_feedback: Optional[bool] = None,
         comment: Optional[str] = None,
     ) -> MessageFeedback:
-        feedback = (
-            self._session.query(MessageFeedback)
-            .filter(MessageFeedback.message_id == message_id)
-            .first()
+        feedback = MessageFeedback(
+            message_id=message_id,
+            positive_feedback=positive_feedback,
+            comment=comment,
+            datetime=datetime.now(timezone.utc),
         )
-        if feedback is None:
-            feedback = MessageFeedback(
-                message_id=message_id,
-                positive_feedback=positive_feedback,
-                comment=comment,
-                datetime=datetime.now(timezone.utc),
-            )
-            self._session.add(feedback)
-        else:
-            if positive_feedback is not None:
-                feedback.positive_feedback = positive_feedback
-            if comment is not None:
-                feedback.comment = comment
-            feedback.datetime = datetime.now(timezone.utc)
+        self._session.add(feedback)
         self._session.flush()
         return feedback
-
-    def get_by_message(
-        self, message_id: int
-    ) -> MessageFeedback:
-        return (
-            self._session.query(MessageFeedback)
-            .filter(MessageFeedback.message_id == message_id)
-            .first()
-        )
 
     def list_by_message_ids(
         self, message_ids: List[int]
