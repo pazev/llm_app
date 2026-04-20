@@ -10,6 +10,7 @@ from langchain_core.messages import (
 )
 from langchain_core.tools import BaseTool
 from services.chat_service import ChatService
+from services._message_utils import message_to_dict
 from tools import ALL_TOOLS
 
 DEFAULT_SYSTEM_PROMPT = (
@@ -54,47 +55,6 @@ class OpenAILangChainService(ChatService):
         self._model = model
         self._build_llm()
 
-    def _message_to_dict(
-        self, message: BaseMessage
-    ) -> Dict[str, Any]:
-        msg_type = type(message).__name__
-        token_usage = 0
-        if msg_type == "AIMessage":
-            token_usage = (
-                (
-                    getattr(message, "response_metadata", None)
-                    or {}
-                )
-                .get("token_usage", {})
-                .get("total_tokens", 0)
-            )
-        tool_calls = [
-            {
-                "name": tc["name"],
-                "args": tc["args"],
-                "type": tc["type"],
-            }
-            for tc in (
-                getattr(message, "tool_calls", None) or []
-            )
-        ]
-        return {
-            "type": msg_type,
-            "content": (
-                message.content
-                if isinstance(message.content, str)
-                else str(message.content)
-            ),
-            "additional_kwargs": (
-                getattr(message, "additional_kwargs", {}) or {}
-            ),
-            "response_metadata": (
-                getattr(message, "response_metadata", {}) or {}
-            ),
-            "token_usage": token_usage,
-            "tool_calls": tool_calls,
-        }
-
     def set_system_prompt_maker(
         self, maker: Callable[[], str]
     ) -> None:
@@ -127,7 +87,7 @@ class OpenAILangChainService(ChatService):
         for _ in range(max_iterations):
             response = self._llm.invoke(messages)
             messages.append(response)
-            context.append(self._message_to_dict(response))
+            context.append(message_to_dict(response))
 
             if not response.tool_calls:
                 return response.content, context
@@ -140,7 +100,7 @@ class OpenAILangChainService(ChatService):
                     tool_call_id=tool_call["id"],
                 )
                 messages.append(tool_msg)
-                context.append(self._message_to_dict(tool_msg))
+                context.append(message_to_dict(tool_msg))
 
         raise RuntimeError(
             f"Agent did not finish within "

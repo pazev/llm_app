@@ -147,13 +147,29 @@ def render_context_debug(
         return
     count = len(context)
     plural = "s" if count != 1 else ""
+    total = sum(
+        msg.get("token_usage", 0) for msg in context
+    )
+    total_in = sum(
+        msg.get("input_tokens", 0) for msg in context
+    )
+    total_out = sum(
+        msg.get("output_tokens", 0) for msg in context
+    )
     with st.expander(
-        f"🔍 Context ({count} message{plural})"
+        f"🔍 Context ({count} message{plural},"
+        f" {total} tokens"
+        f" — in {total_in}, out {total_out})"
     ):
         for i, msg in enumerate(context):
+            tok = msg.get("token_usage", 0)
+            tok_in = msg.get("input_tokens", 0)
+            tok_out = msg.get("output_tokens", 0)
             label = (
                 f"{i + 1}."
-                f" {msg.get('type', 'Message')}"
+                f" {msg.get('type', 'Message')}:"
+                f" {tok} tokens"
+                f" (in {tok_in} / out {tok_out})"
             )
             if msg.get("tool_calls"):
                 tools = ", ".join(
@@ -162,13 +178,6 @@ def render_context_debug(
                 )
                 label += f" → {tools}"
             with st.expander(label, expanded=False):
-                st.markdown(
-                    f"**Type:** `{msg.get('type')}`"
-                )
-                st.markdown(
-                    f"**Token usage:**"
-                    f" `{msg.get('token_usage', 0)}`"
-                )
                 if msg.get("content"):
                     st.markdown("**Content:**")
                     st.code(
@@ -219,11 +228,9 @@ def render_message(
                 datetime.strftime("%Y-%m-%d %H:%M:%S")
             )
         if role == "assistant" and message_id:
+            render_context_debug(
+                message_context or [], message_id
+            )
             render_feedback_row(
                 message_id, existing_feedback
             )
-
-    if role == "assistant" and message_id:
-        render_context_debug(
-            message_context or [], message_id
-        )
