@@ -1,5 +1,6 @@
 import streamlit as st
-from typing import Dict, List
+
+from pages.utils.message import render_message
 
 PAGE_NAME = "Chat"
 SECTION_NAME = "Main"
@@ -9,118 +10,6 @@ PRIORITY = 1
 
 def _get_controller():
     return st.session_state["controller"]
-
-
-def _render_feedback_row(message_id: int):
-    controller = _get_controller()
-    feedback = st.session_state.get(
-        f"feedback_{message_id}", {}
-    )
-
-    if feedback.get("submitted"):
-        sentiment = "👍" if feedback["positive"] else "👎"
-        st.caption(
-            f"Your feedback: {sentiment}"
-            f" — {feedback['comment']}"
-        )
-        return
-
-    st.info(
-        "Feedback requires a rating and a comment.",
-        icon="ℹ️",
-    )
-
-    pending = st.session_state.get(
-        f"pending_sentiment_{message_id}"
-    )
-
-    col_up, col_down, _ = st.columns([1, 1, 9])
-    with col_up:
-        if st.button(
-            "👍",
-            key=f"up_{message_id}",
-            type="primary" if pending is True else "secondary",
-        ):
-            st.session_state[
-                f"pending_sentiment_{message_id}"
-            ] = True
-            st.rerun()
-    with col_down:
-        if st.button(
-            "👎",
-            key=f"down_{message_id}",
-            type=(
-                "primary" if pending is False else "secondary"
-            ),
-        ):
-            st.session_state[
-                f"pending_sentiment_{message_id}"
-            ] = False
-            st.rerun()
-
-    if pending is not None:
-        with st.form(
-            key=f"feedback_form_{message_id}",
-            clear_on_submit=False,
-        ):
-            text = st.text_area(
-                "Add a comment to complete your feedback"
-            )
-            if st.form_submit_button("Submit feedback"):
-                if not text.strip():
-                    st.warning("A comment is required.")
-                else:
-                    controller.submit_feedback(
-                        message_id,
-                        positive_feedback=pending,
-                        comment=text.strip(),
-                    )
-                    st.session_state[
-                        f"feedback_{message_id}"
-                    ] = {
-                        "submitted": True,
-                        "positive": pending,
-                        "comment": text.strip(),
-                    }
-                    del st.session_state[
-                        f"pending_sentiment_{message_id}"
-                    ]
-                    st.rerun()
-
-
-def _render_context_debug(
-    context: List[Dict], message_id: int
-):
-    if not context:
-        return
-    count = len(context)
-    plural = "s" if count != 1 else ""
-    with st.expander(f"🔍 Context ({count} message{plural})"):
-        for i, msg in enumerate(context):
-            label = f"{i + 1}. {msg.get('type', 'Message')}"
-            if msg.get("tool_calls"):
-                tools = ", ".join(
-                    tc["name"] for tc in msg["tool_calls"]
-                )
-                label += f" → {tools}"
-            with st.expander(label, expanded=False):
-                st.markdown(f"**Type:** `{msg.get('type')}`")
-                st.markdown(
-                    f"**Token usage:**"
-                    f" `{msg.get('token_usage', 0)}`"
-                )
-                if msg.get("content"):
-                    st.markdown("**Content:**")
-                    st.code(msg["content"], language=None)
-                if msg.get("tool_calls"):
-                    st.markdown("**Tool calls:**")
-                    st.json(msg["tool_calls"])
-                if msg.get("additional_kwargs"):
-                    st.markdown("**Additional kwargs:**")
-                    st.json(msg["additional_kwargs"])
-                if msg.get("response_metadata"):
-                    st.markdown("**Response metadata:**")
-                    st.json(msg["response_metadata"])
 
 
 def _render_sidebar():
@@ -138,7 +27,9 @@ def _render_sidebar():
             label_visibility="collapsed",
         )
         if selected != current:
-            st.session_state["selected_model"] = selected
+            st.session_state["selected_model"] = (
+                selected
+            )
             controller.set_model(selected)
 
 
@@ -162,30 +53,32 @@ def build_page():
 
     if st.session_state["conversation_id"] is None:
         st.info(
-            "Click **New Conversation** to start chatting."
+            "Click **New Conversation** to start"
+            " chatting."
         )
         return
 
     for entry in st.session_state["messages"]:
-        role = entry["role"]
-        content = entry["content"]
-        message_id = entry.get("message_id")
+        render_message(
+            role=entry["role"],
+            content=entry["content"],
+            message_id=entry.get("message_id"),
+            message_context=entry.get(
+                "message_context"
+            ),
+            datetime=entry.get("datetime"),
+        )
 
-        with st.chat_message(role):
-            st.markdown(content)
-
-        if role == "assistant" and message_id:
-            _render_context_debug(
-                entry.get("message_context") or [],
-                message_id,
-            )
-            _render_feedback_row(message_id)
-
-    user_input = st.chat_input("Ask a business question...")
+    user_input = st.chat_input(
+        "Ask a business question..."
+    )
     if user_input:
         controller = _get_controller()
         history = [
-            {"role": e["role"], "content": e["content"]}
+            {
+                "role": e["role"],
+                "content": e["content"],
+            }
             for e in st.session_state["messages"]
         ]
 
@@ -199,11 +92,13 @@ def build_page():
             "role": "user",
             "content": user_msg.content,
             "message_id": user_msg.message_id,
+            "datetime": user_msg.datetime,
         })
         st.session_state["messages"].append({
             "role": "assistant",
             "content": llm_msg.content,
             "message_id": llm_msg.message_id,
             "message_context": llm_msg.message_context,
+            "datetime": llm_msg.datetime,
         })
         st.rerun()

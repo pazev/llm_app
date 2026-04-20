@@ -143,6 +143,9 @@ class ChatController:
                     conversation_id=conv.conversation_id,
                     datetime_start=conv.datetime_start,
                     title=conv.title,
+                    resumed_from_conversation_id=(
+                        conv.resumed_from_conversation_id
+                    ),
                     message_count=(
                         msg_repo.count_by_conversation(
                             conv.conversation_id

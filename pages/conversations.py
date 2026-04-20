@@ -1,6 +1,7 @@
 import streamlit as st
 
 from pages import load_page_urls
+from pages.utils.message import render_message
 
 PAGE_NAME = "Conversations"
 SECTION_NAME = "Main"
@@ -10,93 +11,6 @@ PRIORITY = 2
 
 def _get_controller():
     return st.session_state["controller"]
-
-
-def _render_feedback(message_id: int, existing_feedback):
-    controller = _get_controller()
-
-    if (
-        f"feedback_{message_id}" not in st.session_state
-        and existing_feedback is not None
-    ):
-        st.session_state[f"feedback_{message_id}"] = {
-            "submitted": True,
-            "positive": existing_feedback.positive_feedback,
-            "comment": existing_feedback.comment,
-        }
-
-    feedback = st.session_state.get(
-        f"feedback_{message_id}", {}
-    )
-
-    if feedback.get("submitted"):
-        sentiment = "👍" if feedback["positive"] else "👎"
-        st.caption(
-            f"Feedback: {sentiment} — {feedback['comment']}"
-        )
-        return
-
-    st.info(
-        "Feedback requires a rating and a comment.",
-        icon="ℹ️",
-    )
-
-    pending = st.session_state.get(
-        f"pending_sentiment_{message_id}"
-    )
-
-    col_up, col_down, _ = st.columns([1, 1, 9])
-    with col_up:
-        if st.button(
-            "👍",
-            key=f"up_{message_id}",
-            type="primary" if pending is True else "secondary",
-        ):
-            st.session_state[
-                f"pending_sentiment_{message_id}"
-            ] = True
-            st.rerun()
-    with col_down:
-        if st.button(
-            "👎",
-            key=f"down_{message_id}",
-            type=(
-                "primary" if pending is False else "secondary"
-            ),
-        ):
-            st.session_state[
-                f"pending_sentiment_{message_id}"
-            ] = False
-            st.rerun()
-
-    if pending is not None:
-        with st.form(
-            key=f"feedback_form_{message_id}",
-            clear_on_submit=False,
-        ):
-            text = st.text_area(
-                "Add a comment to complete your feedback"
-            )
-            if st.form_submit_button("Submit feedback"):
-                if not text.strip():
-                    st.warning("A comment is required.")
-                else:
-                    controller.submit_feedback(
-                        message_id,
-                        positive_feedback=pending,
-                        comment=text.strip(),
-                    )
-                    st.session_state[
-                        f"feedback_{message_id}"
-                    ] = {
-                        "submitted": True,
-                        "positive": pending,
-                        "comment": text.strip(),
-                    }
-                    del st.session_state[
-                        f"pending_sentiment_{message_id}"
-                    ]
-                    st.rerun()
 
 
 def build_page():
@@ -121,15 +35,19 @@ def build_page():
     with col_left:
         st.subheader("History")
         for conv in conversations:
-            title = (
-                conv.title
-                or f"Conversation #{conv.conversation_id}"
-            )
             created = conv.datetime_start.strftime(
                 "%Y-%m-%d %H:%M"
             )
             with st.container(border=True):
-                st.markdown(f"**{title}**")
+                st.markdown(
+                    f"**Conversation"
+                    f" #{conv.conversation_id}**"
+                )
+                if conv.resumed_from_conversation_id:
+                    st.caption(
+                        "Resumed from Conversation"
+                        f" #{conv.resumed_from_conversation_id}"
+                    )
                 st.caption(f"Created: {created}")
                 st.caption(
                     f"Messages: {conv.message_count}"
@@ -179,6 +97,7 @@ def build_page():
                                 ),
                                 "content": m.content,
                                 "message_id": m.message_id,
+                                "datetime": m.datetime,
                                 **(
                                     {
                                         "message_context": (
@@ -214,16 +133,15 @@ def build_page():
                     if msg.sender == "user"
                     else "assistant"
                 )
-                with st.chat_message(role):
-                    st.markdown(msg.content)
-                    st.caption(
-                        msg.datetime.strftime(
-                            "%Y-%m-%d %H:%M:%S"
-                        )
-                    )
-
-                if msg.sender == "llm":
-                    _render_feedback(
-                        msg.message_id,
-                        feedbacks.get(msg.message_id),
-                    )
+                render_message(
+                    role=role,
+                    content=msg.content,
+                    message_id=msg.message_id,
+                    message_context=getattr(
+                        msg, "message_context", None
+                    ),
+                    existing_feedback=feedbacks.get(
+                        msg.message_id
+                    ),
+                    datetime=msg.datetime,
+                )
