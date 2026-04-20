@@ -51,3 +51,26 @@ class MessageRepository:
             )
             .count()
         )
+
+    def sum_tokens_by_conversation(
+        self, conversation_id: int
+    ) -> dict:
+        messages = (
+            self._session.query(Message)
+            .filter(
+                Message.conversation_id == conversation_id,
+                Message.sender == "llm",
+            )
+            .all()
+        )
+        total = input_t = output_t = 0
+        for msg in messages:
+            for ctx in msg.message_context or []:
+                total += ctx.get("token_usage", 0)
+                input_t += ctx.get("input_tokens", 0)
+                output_t += ctx.get("output_tokens", 0)
+        return {
+            "token_usage": total,
+            "input_tokens": input_t,
+            "output_tokens": output_t,
+        }

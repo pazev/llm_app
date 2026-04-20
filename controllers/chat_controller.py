@@ -156,6 +156,9 @@ class ChatController:
                             conv.conversation_id
                         )
                     ),
+                    **msg_repo.sum_tokens_by_conversation(
+                        conv.conversation_id
+                    ),
                 )
                 for conv in conversations
             ]

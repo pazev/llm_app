@@ -53,6 +53,11 @@ def build_page():
                     f"Messages: {conv.message_count}"
                     f" · Feedbacks: {conv.feedback_count}"
                 )
+                st.caption(
+                    f"Tokens: {conv.token_usage}"
+                    f" (in {conv.input_tokens}"
+                    f" / out {conv.output_tokens})"
+                )
                 btn_col, resume_col = st.columns(2)
                 with btn_col:
                     if st.button(

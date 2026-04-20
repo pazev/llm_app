@@ -24,3 +24,6 @@ class ConversationSummary(BaseModel):
     message_count: int
     feedback_count: int
     resumed_from_conversation_id: Optional[int] = None
+    token_usage: int = 0
+    input_tokens: int = 0
+    output_tokens: int = 0
