@@ -27,3 +27,4 @@ class ConversationSummary(BaseModel):
     token_usage: int = 0
     input_tokens: int = 0
     output_tokens: int = 0
+    username: Optional[str] = None

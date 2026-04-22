@@ -30,12 +30,15 @@ class ChatController:
         self._chat_service.set_model(model)
 
     def resume_conversation(
-        self, conversation_id: int
+        self,
+        conversation_id: int,
+        user_id: Optional[int] = None,
     ) -> Tuple[ConversationResponse, List[MessageResponse]]:
         with get_db() as db:
             new_conv = ConversationRepository(db).create(
                 title=f"Resumed from #{conversation_id}",
                 resumed_from_conversation_id=conversation_id,
+                user_id=user_id,
             )
             old_messages = MessageRepository(
                 db
@@ -77,12 +80,15 @@ class ChatController:
             )
 
     def start_conversation(
-        self, title: Optional[str] = None
+        self,
+        title: Optional[str] = None,
+        user_id: Optional[int] = None,
     ) -> ConversationResponse:
         dto = ConversationCreate(title=title)
         with get_db() as db:
             conv = ConversationRepository(db).create(
-                title=dto.title
+                title=dto.title,
+                user_id=user_id,
             )
             return ConversationResponse.model_validate(conv)
 
@@ -155,6 +161,11 @@ class ChatController:
                         fb_repo.count_by_conversation(
                             conv.conversation_id
                         )
+                    ),
+                    username=(
+                        conv.user.username
+                        if conv.user
+                        else None
                     ),
                     **msg_repo.sum_tokens_by_conversation(
                         conv.conversation_id

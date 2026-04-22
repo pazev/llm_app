@@ -117,8 +117,27 @@ def cmd_init():
         cwd=ROOT,
         check=True,
     )
+    _fix_db_permissions()
     _seed_admin_user()
     print("Initialisation complete.")
+
+
+def _fix_db_permissions():
+    import re
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(ROOT, ".env"))
+    db_url = os.environ.get(
+        "DATABASE_URL", "sqlite:///./app.db"
+    )
+    m = re.match(r"sqlite:///(.+)", db_url)
+    if not m:
+        return
+    db_path = m.group(1)
+    if not os.path.isabs(db_path):
+        db_path = os.path.join(ROOT, db_path)
+    if os.path.exists(db_path):
+        os.chmod(db_path, 0o664)
+        print(f"Set permissions 664 on {db_path}")
 
 
 def _seed_admin_user():

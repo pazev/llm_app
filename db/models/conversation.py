@@ -20,12 +20,18 @@ class Conversation(Base):
         DateTime, default=datetime.utcnow, nullable=False
     )
     title = Column(String(255), nullable=True)
+    user_id = Column(
+        Integer,
+        ForeignKey("users.user_id"),
+        nullable=True,
+    )
     resumed_from_conversation_id = Column(
         Integer,
         ForeignKey("conversations.conversation_id"),
         nullable=True,
     )
 
+    user = relationship("User", foreign_keys=[user_id])
     messages = relationship(
         "Message",
         back_populates="conversation",

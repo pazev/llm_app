@@ -58,6 +58,16 @@ One `MessageFeedback` per `Message`, enforced via repository upsert logic (not a
 3. Implement `build_page()`
 4. Access the controller via `st.session_state["controller"]`
 
+### Page navigation
+
+Always use `load_page_urls()` for programmatic navigation — never hardcode `"pages/foo.py"` strings:
+
+```python
+from pages import load_page_urls
+
+st.switch_page(load_page_urls()["chat"])
+```
+
 ---
 
 ## Environment variables (`.env`)

@@ -1,5 +1,7 @@
 import streamlit as st
 
+from pages import load_page_urls
+
 PAGE_NAME = "Login"
 SECTION_NAME = "Auth"
 URL_PATH = "login"
@@ -8,6 +10,10 @@ REQUIRED_ROLES: set = set()  # public
 
 
 def build_page():
+    if st.session_state.get("user") is not None:
+        st.switch_page(load_page_urls()["chat"])
+        return
+
     st.title("Sign In")
 
     auth = st.session_state["auth_controller"]

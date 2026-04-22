@@ -44,7 +44,10 @@ def build_page():
 
     if st.button("New Conversation", type="primary"):
         controller = _get_controller()
-        conv = controller.start_conversation()
+        user = st.session_state.get("user")
+        conv = controller.start_conversation(
+            user_id=user.user_id if user else None
+        )
         st.session_state["conversation_id"] = (
             conv.conversation_id
         )

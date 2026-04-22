@@ -50,6 +50,8 @@ def build_page():
                         f" #{conv.resumed_from_conversation_id}"
                     )
                 st.caption(f"Created: {created}")
+                if conv.username:
+                    st.caption(f"User: {conv.username}")
                 st.caption(
                     f"Messages: {conv.message_count}"
                     f" · Feedbacks: {conv.feedback_count}"
@@ -86,9 +88,14 @@ def build_page():
                             f"{conv.conversation_id}"
                         ),
                     ):
+                        user = st.session_state.get("user")
                         new_conv, old_messages = (
                             controller.resume_conversation(
-                                conv.conversation_id
+                                conv.conversation_id,
+                                user_id=(
+                                    user.user_id
+                                    if user else None
+                                ),
                             )
                         )
                         st.session_state[
