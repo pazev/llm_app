@@ -137,10 +137,14 @@ class ChatController:
 
         return user_response, llm_response
 
-    def list_conversations(self) -> List[ConversationSummary]:
+    def list_conversations(
+        self, user_id: Optional[int] = None
+    ) -> List[ConversationSummary]:
         with get_db() as db:
             conversations = (
-                ConversationRepository(db).list_all()
+                ConversationRepository(db).list_all(
+                    user_id=user_id
+                )
             )
             msg_repo = MessageRepository(db)
             fb_repo = FeedbackRepository(db)

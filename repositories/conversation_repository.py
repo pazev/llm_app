@@ -31,9 +31,12 @@ class ConversationRepository:
     ) -> Conversation:
         return self._session.get(Conversation, conversation_id)
 
-    def list_all(self) -> List[Conversation]:
-        return (
-            self._session.query(Conversation)
-            .order_by(Conversation.datetime_start.desc())
-            .all()
-        )
+    def list_all(
+        self, user_id: Optional[int] = None
+    ) -> List[Conversation]:
+        q = self._session.query(Conversation)
+        if user_id is not None:
+            q = q.filter(Conversation.user_id == user_id)
+        return q.order_by(
+            Conversation.datetime_start.desc()
+        ).all()

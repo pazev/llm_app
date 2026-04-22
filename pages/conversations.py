@@ -19,7 +19,10 @@ def build_page():
     st.title("Conversations")
 
     controller = _get_controller()
-    conversations = controller.list_conversations()
+    user = st.session_state.get("user")
+    conversations = controller.list_conversations(
+        user_id=user.user_id if user else None
+    )
 
     if not conversations:
         st.info(
@@ -51,8 +54,6 @@ def build_page():
                         f" #{conv.resumed_from_conversation_id}"
                     )
                 st.caption(f"Created: {created}")
-                if conv.username:
-                    st.caption(f"User: {conv.username}")
                 st.caption(
                     f"Messages: {conv.message_count}"
                     f" · Feedbacks: {conv.feedback_count}"
