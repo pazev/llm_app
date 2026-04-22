@@ -117,7 +117,27 @@ def cmd_init():
         cwd=ROOT,
         check=True,
     )
+    _seed_admin_user()
     print("Initialisation complete.")
+
+
+def _seed_admin_user():
+    from db.session import SessionLocal
+    from repositories.user_repository import UserRepository
+
+    with SessionLocal() as session:
+        repo = UserRepository(session)
+        if repo.get_by_username("admin") is not None:
+            print("Admin user already exists — skipping.")
+            return
+        repo.create(
+            username="admin",
+            email="admin@admin.com",
+            password="admin",
+            roles=["admin"],
+        )
+        session.commit()
+        print("Admin user created (username: admin, password: admin).")
 
 
 def cmd_dumpzip():
