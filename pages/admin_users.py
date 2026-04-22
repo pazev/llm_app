@@ -5,6 +5,7 @@ SECTION_NAME = "Admin"
 URL_PATH = "admin-users"
 PRIORITY = 100
 REQUIRED_ROLES = {"admin"}
+HIDE_IF_LOGGED_IN = False
 
 _ALL_ROLES = ["user", "business_admin", "admin"]
 

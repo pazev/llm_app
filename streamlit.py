@@ -59,6 +59,6 @@ with st.sidebar:
         st.rerun()
 
 nav = st.navigation(
-    load_page_sections(user_roles=user_roles)
+    load_page_sections(user_roles=user_roles, logged_in=True)
 )
 nav.run()

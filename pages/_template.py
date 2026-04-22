@@ -13,6 +13,7 @@ PAGE_NAME = "Template Page"
 SECTION_NAME = "Main"
 URL_PATH = "template"
 PRIORITY = 100
+HIDE_IF_LOGGED_IN = False
 
 
 def build_page():

@@ -8,6 +8,7 @@ SECTION_NAME = "Main"
 URL_PATH = "conversations"
 PRIORITY = 2
 REQUIRED_ROLES = {"user", "business_admin", "admin"}
+HIDE_IF_LOGGED_IN = False
 
 
 def _get_controller():

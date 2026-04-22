@@ -5,6 +5,7 @@ SECTION_NAME = "Account"
 URL_PATH = "change-password"
 PRIORITY = 90
 REQUIRED_ROLES: set = set()  # any logged-in user
+HIDE_IF_LOGGED_IN = False
 
 
 def build_page():

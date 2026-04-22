@@ -58,6 +58,11 @@ One `MessageFeedback` per `Message`, enforced via repository upsert logic (not a
 3. Implement `build_page()`
 4. Access the controller via `st.session_state["controller"]`
 
+| Constant | Type | Default | Purpose |
+|---|---|---|---|
+| `REQUIRED_ROLES` | `set[str]` | `set()` | Roles that can see this page; empty = public |
+| `HIDE_IF_LOGGED_IN` | `bool` | `False` | If `True`, page is hidden from the nav when the user is logged in (e.g. login page) |
+
 ### Page navigation
 
 Always use `load_page_urls()` for programmatic navigation — never hardcode `"pages/foo.py"` strings:

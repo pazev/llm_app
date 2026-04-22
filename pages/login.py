@@ -7,6 +7,7 @@ SECTION_NAME = "Auth"
 URL_PATH = "login"
 PRIORITY = 0
 REQUIRED_ROLES: set = set()  # public
+HIDE_IF_LOGGED_IN = True
 
 
 def build_page():

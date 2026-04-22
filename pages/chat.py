@@ -7,6 +7,7 @@ SECTION_NAME = "Main"
 URL_PATH = "chat"
 PRIORITY = 1
 REQUIRED_ROLES = {"user", "business_admin", "admin"}
+HIDE_IF_LOGGED_IN = False
 
 
 def _get_controller():

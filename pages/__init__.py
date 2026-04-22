@@ -20,6 +20,7 @@ class PageInfo:
     required_roles: Set[str] = field(
         default_factory=set
     )
+    hide_if_logged_in: bool = False
 
 
 def _load_page_modules() -> List[ModuleType]:
@@ -51,6 +52,9 @@ def _module_to_page_info(mod: ModuleType) -> PageInfo:
         required_roles=set(
             getattr(mod, "REQUIRED_ROLES", set())
         ),
+        hide_if_logged_in=getattr(
+            mod, "HIDE_IF_LOGGED_IN", False
+        ),
         page=st.Page(
             build_page, title=title, url_path=url_path
         ),
@@ -59,11 +63,17 @@ def _module_to_page_info(mod: ModuleType) -> PageInfo:
 
 def _page_infos(
     user_roles: Optional[Set[str]] = None,
+    logged_in: bool = False,
 ) -> List[PageInfo]:
     infos = [
         _module_to_page_info(mod)
         for mod in _load_page_modules()
     ]
+    if logged_in:
+        infos = [
+            info for info in infos
+            if not info.hide_if_logged_in
+        ]
     if user_roles is None:
         return infos
     return [
@@ -75,11 +85,12 @@ def _page_infos(
 
 def load_page_sections(
     user_roles: Optional[Set[str]] = None,
+    logged_in: bool = False,
 ) -> Dict[str, List[st.Page]]:
     sections: Dict[str, List[st.Page]] = defaultdict(
         list
     )
-    for info in _page_infos(user_roles):
+    for info in _page_infos(user_roles, logged_in):
         sections[info.section].append(info.page)
     return dict(sections)
 
