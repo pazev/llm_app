@@ -43,7 +43,13 @@ def build_page():
         st.session_state["conversation_id"] = None
         st.session_state["messages"] = []
 
-    if st.button("New Conversation", type="primary"):
+    waiting = st.session_state.get("waiting", False)
+
+    if st.button(
+        "New Conversation",
+        type="primary",
+        disabled=waiting,
+    ):
         controller = _get_controller()
         user = st.session_state.get("user")
         conv = controller.start_conversation(
@@ -54,6 +60,8 @@ def build_page():
         )
         st.session_state["messages"] = []
         st.session_state["active_comment_for"] = None
+        st.session_state.pop("waiting", None)
+        st.session_state.pop("pending_input", None)
         st.rerun()
 
     if st.session_state["conversation_id"] is None:
@@ -72,33 +80,38 @@ def build_page():
                 "message_context"
             ),
             datetime=entry.get("datetime"),
+            disabled=waiting,
         )
 
-    user_input = st.chat_input(
-        "Ask a business question..."
-    )
-    if user_input:
+    if waiting:
+        pending_input = st.session_state.get(
+            "pending_input", ""
+        )
         controller = _get_controller()
         history = [
             {
                 "role": e["role"],
                 "content": e["content"],
             }
-            for e in st.session_state["messages"]
+            for e in st.session_state["messages"][:-1]
         ]
-
-        user_msg, llm_msg = controller.send_message(
-            st.session_state["conversation_id"],
-            user_input,
-            history,
-        )
-
-        st.session_state["messages"].append({
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking..."):
+                user_msg, llm_msg = (
+                    controller.send_message(
+                        st.session_state[
+                            "conversation_id"
+                        ],
+                        pending_input,
+                        history,
+                    )
+                )
+        st.session_state["messages"][-1] = {
             "role": "user",
             "content": user_msg.content,
             "message_id": user_msg.message_id,
             "datetime": user_msg.datetime,
-        })
+        }
         st.session_state["messages"].append({
             "role": "assistant",
             "content": llm_msg.content,
@@ -106,4 +119,21 @@ def build_page():
             "message_context": llm_msg.message_context,
             "datetime": llm_msg.datetime,
         })
+        st.session_state["waiting"] = False
+        st.session_state.pop("pending_input", None)
+        st.rerun()
+        return
+
+    user_input = st.chat_input(
+        "Ask a business question..."
+    )
+    if user_input:
+        st.session_state["messages"].append({
+            "role": "user",
+            "content": user_input,
+            "message_id": None,
+            "datetime": None,
+        })
+        st.session_state["pending_input"] = user_input
+        st.session_state["waiting"] = True
         st.rerun()

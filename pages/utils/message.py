@@ -15,6 +15,7 @@ import streamlit as st
 def render_feedback_row(
     message_id: int,
     existing_feedbacks=None,
+    disabled: bool = False,
 ):
     """Render thumbs feedback UI for an LLM message.
 
@@ -81,6 +82,7 @@ def render_feedback_row(
                 "primary" if pending is True
                 else "secondary"
             ),
+            disabled=disabled,
         ):
             if pending is True:
                 del st.session_state[pending_key]
@@ -95,6 +97,7 @@ def render_feedback_row(
                 "primary" if pending is False
                 else "secondary"
             ),
+            disabled=disabled,
         ):
             if pending is False:
                 del st.session_state[pending_key]
@@ -102,7 +105,7 @@ def render_feedback_row(
                 st.session_state[pending_key] = False
             st.rerun()
 
-    if pending is not None:
+    if pending is not None and not disabled:
         with st.form(
             key=f"feedback_form_{message_id}",
             clear_on_submit=False,
@@ -211,6 +214,7 @@ def render_message(
     message_context: Optional[List[Dict]] = None,
     existing_feedbacks=None,
     datetime: Optional[datetime] = None,
+    disabled: bool = False,
 ):
     """Render a single chat message with optional
     context debug and feedback row.
@@ -226,6 +230,8 @@ def render_message(
             FeedbackResponse from the DB, or None.
         datetime: When provided, shown as a caption
             inside the message bubble.
+        disabled: When True, all interactive elements
+            (feedback buttons, forms) are disabled.
     """
     with st.chat_message(role):
         st.markdown(content)
@@ -238,5 +244,6 @@ def render_message(
                 message_context or [], message_id
             )
             render_feedback_row(
-                message_id, existing_feedbacks
+                message_id, existing_feedbacks,
+                disabled=disabled,
             )

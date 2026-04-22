@@ -4,8 +4,8 @@ from typing import Any, Callable, Dict, List, Tuple
 from langchain_core.messages import AIMessage
 from langchain_core.messages.ai import UsageMetadata
 
-from services._message_utils import message_to_dict
-from services.chat_service import ChatService
+from services_llm._message_utils import message_to_dict
+from services_llm.chat_service import ChatService
 
 _STUB_RESPONSE = "Message Processed"
 

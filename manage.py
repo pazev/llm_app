@@ -1,23 +1,7 @@
 #!/usr/bin/env python
-"""
-manage.py — project management utilities.
+"""manage.py — project management utilities."""
 
-Usage:
-    python manage.py <command>
-
-Commands:
-    run                   Start the Streamlit app
-    init                  Run first-time initialisation
-                          (alembic migrations)
-    dumpzip               Create a timestamped zip of the
-                          project in ./dumpzip/
-    tree                  Print the project file tree
-    clear                 Remove cache/garbage files and
-                          folders
-    trim_trailing_spaces  Remove trailing whitespace from
-                          all text files
-"""
-
+import argparse
 import os
 import sys
 import subprocess
@@ -96,113 +80,11 @@ def _iter_project_files(
             yield dirpath, filename
 
 
-# ---------------------------------------------------------------------------
-# Commands
-# ---------------------------------------------------------------------------
-
-def cmd_run():
-    """Start the Streamlit app."""
-    subprocess.run(
-        ["streamlit", "run", "streamlit.py"],
-        cwd=ROOT,
-        check=True,
-    )
-
-
-def cmd_init():
-    """Run first-time initialisation."""
-    print("Running Alembic migrations...")
-    subprocess.run(
-        ["alembic", "upgrade", "head"],
-        cwd=ROOT,
-        check=True,
-    )
-    _fix_db_permissions()
-    _seed_admin_user()
-    print("Initialisation complete.")
-
-
-def _fix_db_permissions():
-    import re
-    from dotenv import load_dotenv
-    load_dotenv(os.path.join(ROOT, ".env"))
-    db_url = os.environ.get(
-        "DATABASE_URL", "sqlite:///./app.db"
-    )
-    m = re.match(r"sqlite:///(.+)", db_url)
-    if not m:
-        return
-    db_path = m.group(1)
-    if not os.path.isabs(db_path):
-        db_path = os.path.join(ROOT, db_path)
-    if os.path.exists(db_path):
-        os.chmod(db_path, 0o664)
-        print(f"Set permissions 664 on {db_path}")
-
-
-def _seed_admin_user():
-    from db.session import SessionLocal
-    from repositories.user_repository import UserRepository
-
-    with SessionLocal() as session:
-        repo = UserRepository(session)
-        if repo.get_by_username("admin") is not None:
-            print("Admin user already exists — skipping.")
-            return
-        repo.create(
-            username="admin",
-            email="admin@admin.com",
-            password="admin",
-            roles=["admin"],
-        )
-        session.commit()
-        print("Admin user created (username: admin, password: admin).")
-
-
-def cmd_dumpzip():
-    """Create a timestamped zip of the project in
-    ./dumpzip/."""
-    dump_dir = os.path.join(ROOT, "dumpzip")
-    os.makedirs(dump_dir, exist_ok=True)
-
-    timestamp = datetime.datetime.now().strftime(
-        "%Y%m%d_%H%M%S"
-    )
-    zip_name = f"project_{timestamp}.zip"
-    zip_path = os.path.join(dump_dir, zip_name)
-
-    with zipfile.ZipFile(
-        zip_path, "w", zipfile.ZIP_DEFLATED
-    ) as zf:
-        for dirpath, filename in _iter_project_files(
-            exclude_dirs=EXCLUDE_FROM_ZIP
-        ):
-            ext = os.path.splitext(filename)[1].lower()
-            if ext in EXCLUDE_EXTENSIONS_FROM_ZIP:
-                continue
-            full_path = os.path.join(dirpath, filename)
-            arcname = os.path.relpath(full_path, ROOT)
-            zf.write(full_path, arcname)
-
-    print(f"Created: {zip_path}")
-
-
-def cmd_tree(
-    indent: int = 0,
-    path: Optional[str] = None,
-    exclude: Optional[Set[str]] = None,
-):
-    """Print the project file tree."""
-    if path is None:
-        path = ROOT
-        exclude = {
-            "__pycache__", ".git", ".pytest_cache",
-            ".mypy_cache", ".ruff_cache",
-            ".ipynb_checkpoints", "dumpzip", ".venv",
-            "venv", "env", ".eggs", "htmlcov",
-        }
-        print(os.path.basename(ROOT) + "/")
-
+def _print_tree(
+    path: str,
+    indent: int,
+    exclude: Set[str],
+) -> None:
     try:
         entries = sorted(
             os.scandir(path),
@@ -221,14 +103,118 @@ def cmd_tree(
             print(
                 f"{'    ' * indent}├── {entry.name}/"
             )
-            cmd_tree(indent + 1, entry.path, exclude)
+            _print_tree(entry.path, indent + 1, exclude)
         else:
             print(
                 f"{'    ' * indent}├── {entry.name}"
             )
 
 
-def cmd_clear():
+# ---------------------------------------------------------------------------
+# Commands
+# ---------------------------------------------------------------------------
+
+def cmd_run(args: argparse.Namespace) -> None:
+    """Start the Streamlit app."""
+    subprocess.run(
+        ["streamlit", "run", "streamlit.py"],
+        cwd=ROOT,
+        check=True,
+    )
+
+
+def cmd_init(args: argparse.Namespace) -> None:
+    """Run first-time initialisation."""
+    print("Running Alembic migrations...")
+    subprocess.run(
+        ["alembic", "upgrade", "head"],
+        cwd=ROOT,
+        check=True,
+    )
+    _fix_db_permissions()
+    _seed_admin_user()
+    print("Initialisation complete.")
+
+
+def _fix_db_permissions() -> None:
+    import re
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(ROOT, ".env"))
+    db_url = os.environ.get(
+        "DATABASE_URL", "sqlite:///./app.db"
+    )
+    m = re.match(r"sqlite:///(.+)", db_url)
+    if not m:
+        return
+    db_path = m.group(1)
+    if not os.path.isabs(db_path):
+        db_path = os.path.join(ROOT, db_path)
+    if os.path.exists(db_path):
+        os.chmod(db_path, 0o664)
+        print(f"Set permissions 664 on {db_path}")
+
+
+def _seed_admin_user() -> None:
+    from db.session import SessionLocal
+    from repositories.user_repository import UserRepository
+
+    with SessionLocal() as session:
+        repo = UserRepository(session)
+        if repo.get_by_username("admin") is not None:
+            print("Admin user already exists — skipping.")
+            return
+        repo.create(
+            username="admin",
+            email="admin@admin.com",
+            password="admin",
+            roles=["admin"],
+        )
+        session.commit()
+        print("Admin user created (username: admin, password: admin).")
+
+
+def cmd_dumpzip(args: argparse.Namespace) -> None:
+    """Create a timestamped zip of the project in ./dumpzip/."""
+    dump_dir = os.path.join(ROOT, "dumpzip")
+    os.makedirs(dump_dir, exist_ok=True)
+
+    timestamp = datetime.datetime.now().strftime(
+        "%Y%m%d_%H%M%S"
+    )
+    zip_name = f"project_{timestamp}.zip"
+    zip_path = os.path.join(dump_dir, zip_name)
+
+    with zipfile.ZipFile(
+        zip_path, "w", zipfile.ZIP_DEFLATED
+    ) as zf:
+        for dirpath, filename in _iter_project_files(
+            exclude_dirs=EXCLUDE_FROM_ZIP
+        ):
+            if args.exclude_env and filename == ".env":
+                continue
+            ext = os.path.splitext(filename)[1].lower()
+            if ext in EXCLUDE_EXTENSIONS_FROM_ZIP:
+                continue
+            full_path = os.path.join(dirpath, filename)
+            arcname = os.path.relpath(full_path, ROOT)
+            zf.write(full_path, arcname)
+
+    print(f"Created: {zip_path}")
+
+
+def cmd_tree(args: argparse.Namespace) -> None:
+    """Print the project file tree."""
+    exclude: Set[str] = {
+        "__pycache__", ".git", ".pytest_cache",
+        ".mypy_cache", ".ruff_cache",
+        ".ipynb_checkpoints", "dumpzip", ".venv",
+        "venv", "env", ".eggs", "htmlcov",
+    }
+    print(os.path.basename(ROOT) + "/")
+    _print_tree(ROOT, 0, exclude)
+
+
+def cmd_clear(args: argparse.Namespace) -> None:
     """Remove cache and garbage files/folders."""
     import shutil
     removed = 0
@@ -269,8 +255,10 @@ def cmd_clear():
     print(f"Done — {removed} item(s) removed.")
 
 
-def cmd_trim_trailing_spaces():
-    """Remove trailing whitespace from all text files."""
+def cmd_trim_trailing_spaces(
+    args: argparse.Namespace,
+) -> None:
+    """Remove trailing whitespace and normalize CRLF in all text files."""
     SKIP_DIRS: Set[str] = {
         "__pycache__", ".git", ".venv", "venv", "env",
         "dumpzip", ".pytest_cache", ".mypy_cache",
@@ -290,12 +278,16 @@ def cmd_trim_trailing_spaces():
                 "r",
                 encoding="utf-8",
                 errors="replace",
+                newline="",
             ) as f:
                 original = f.read()
         except OSError:
             continue
 
-        lines = original.splitlines(keepends=True)
+        normalized = original.replace(
+            "\r\n", "\n"
+        ).replace("\r", "\n")
+        lines = normalized.splitlines(keepends=True)
         cleaned_lines = [
             line.rstrip(" \t")
             + ("\n" if line.endswith("\n") else "")
@@ -331,10 +323,47 @@ COMMANDS = {
 }
 
 if __name__ == "__main__":
-    if (
-        len(sys.argv) < 2
-        or sys.argv[1] not in COMMANDS
-    ):
-        print(__doc__)
+    parser = argparse.ArgumentParser(
+        prog="manage.py",
+        description="Project management utilities.",
+    )
+    subparsers = parser.add_subparsers(dest="command")
+
+    subparsers.add_parser(
+        "run",
+        help="Start the Streamlit app",
+    )
+    subparsers.add_parser(
+        "init",
+        help="Run first-time initialisation (alembic migrations)",
+    )
+
+    p_zip = subparsers.add_parser(
+        "dumpzip",
+        help="Create a timestamped zip of the project in ./dumpzip/",
+    )
+    p_zip.add_argument(
+        "--exclude_env",
+        action="store_true",
+        help="Omit the .env file from the zip",
+    )
+
+    subparsers.add_parser(
+        "tree",
+        help="Print the project file tree",
+    )
+    subparsers.add_parser(
+        "clear",
+        help="Remove cache/garbage files and folders",
+    )
+    subparsers.add_parser(
+        "trim_trailing_spaces",
+        help="Remove trailing whitespace and normalize CRLF in all text files",
+    )
+
+    args = parser.parse_args()
+    if args.command is None:
+        parser.print_help()
         sys.exit(1)
-    COMMANDS[sys.argv[1]]()
+
+    COMMANDS[args.command](args)

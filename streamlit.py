@@ -5,8 +5,8 @@ from pages import load_page_sections, load_page_urls
 
 def _build_controller():
     from controllers.chat_controller import ChatController
-    from services import get_llm_service
-    from services.system_prompt import (
+    from services_llm import get_llm_service
+    from services_llm.system_prompt import (
         get_system_prompt_maker,
     )
 

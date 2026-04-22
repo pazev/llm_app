@@ -10,8 +10,8 @@ from langchain_core.messages import (
     BaseMessage,
 )
 from langchain_core.tools import BaseTool
-from services.chat_service import ChatService
-from services._message_utils import message_to_dict
+from services_llm.chat_service import ChatService
+from services_llm._message_utils import message_to_dict
 from tools import ALL_TOOLS
 
 DEFAULT_SYSTEM_PROMPT = (

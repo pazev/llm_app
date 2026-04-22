@@ -77,6 +77,16 @@ class AuthController:
             repo.update_password(user, dto.new_password)
             return True, "Password changed successfully."
 
+    def reset_password(
+        self, user_id: int, new_password: str
+    ) -> None:
+        with get_db() as db:
+            repo = UserRepository(db)
+            user = repo.get_by_id(user_id)
+            if user is None:
+                raise ValueError("User not found.")
+            repo.update_password(user, new_password)
+
     def list_users(self) -> List[UserResponse]:
         with get_db() as db:
             users = UserRepository(db).list_all()

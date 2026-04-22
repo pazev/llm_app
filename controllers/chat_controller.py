@@ -15,8 +15,8 @@ from schemas import (
     FeedbackSubmit,
     FeedbackResponse,
 )
-from services.chat_service import ChatService
-from services.models import list_available_models
+from services_llm.chat_service import ChatService
+from services_llm.models import list_available_models
 
 
 class ChatController:
