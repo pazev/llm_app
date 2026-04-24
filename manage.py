@@ -255,6 +255,37 @@ def cmd_clear(args: argparse.Namespace) -> None:
     print(f"Done — {removed} item(s) removed.")
 
 
+def cmd_setup_env(args: argparse.Namespace) -> None:
+    """Set OPENAI_API_KEY in .env, copying template if needed."""
+    import re
+    import shutil
+
+    template = os.path.join(ROOT, ".env.example")
+    target = os.path.join(ROOT, ".env")
+
+    if not os.path.exists(target):
+        if not os.path.exists(template):
+            print("Error: .env.example not found.")
+            sys.exit(1)
+        shutil.copy2(template, target)
+        print("Copied .env.example → .env")
+
+    with open(target, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    content = re.sub(
+        r"^(OPENAI_API_KEY\s*=\s*).*$",
+        rf"\g<1>{args.openai_key}",
+        content,
+        flags=re.MULTILINE,
+    )
+
+    with open(target, "w", encoding="utf-8") as f:
+        f.write(content)
+
+    print("Set OPENAI_API_KEY in .env")
+
+
 def cmd_trim_trailing_spaces(
     args: argparse.Namespace,
 ) -> None:
@@ -316,6 +347,7 @@ def cmd_trim_trailing_spaces(
 COMMANDS = {
     "run": cmd_run,
     "init": cmd_init,
+    "setup_env": cmd_setup_env,
     "dumpzip": cmd_dumpzip,
     "tree": cmd_tree,
     "clear": cmd_clear,
@@ -336,6 +368,17 @@ if __name__ == "__main__":
     subparsers.add_parser(
         "init",
         help="Run first-time initialisation (alembic migrations)",
+    )
+
+    p_env = subparsers.add_parser(
+        "setup_env",
+        help="Copy .env.example to .env and set OPENAI_API_KEY",
+    )
+    p_env.add_argument(
+        "--openai-key",
+        required=True,
+        metavar="KEY",
+        help="Your OpenAI API key",
     )
 
     p_zip = subparsers.add_parser(
